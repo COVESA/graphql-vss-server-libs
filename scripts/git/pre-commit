@@ -1,0 +1,72 @@
+#!/bin/sh
+
+unset $(git rev-parse --local-env-vars)
+
+BASE_PATH="$(git rev-parse --show-toplevel)"
+CPP_SERVER_PATH="$BASE_PATH/cpp-server"
+CMAKE="cmake"
+CLANG_TIDY="clang-tidy"
+
+test_dependencies() {
+  if ! [ -x "$(command -v $CMAKE)" ]; then
+    printf "\033[41mPlease install cmake (apt install cmake)\033[0m\n"
+    return 1
+  fi
+
+  if ! [ -x "$(command -v $CLANG_TIDY)" ]; then
+    printf "\033[41mPlease install clang-tidy (apt install clang-tidy)\033[0m\n"
+    return 1
+  fi
+
+  return 0
+}
+
+generate_compile_commands() {
+  if [ ! -e "$CPP_SERVER_PATH/build/compile_commands.json" ]; then
+    if [ -d "$CPP_SERVER_PATH/build" ] && ! [ -w "$CPP_SERVER_PATH/build" ]; then
+      printf "\033[41m The folder $CPP_SERVER_PATH/build doens't have write permision\033[0m\n"
+      return 1
+    fi
+
+    cmake -B$CPP_SERVER_PATH/build -S$CPP_SERVER_PATH
+
+    if [ "$?" -ne 0 ]; then
+      printf "\033[41mIt was not possible generate the file compile_comands.json\033[0m\n"
+      return 1
+    fi
+  fi
+  return 0
+}
+
+call_clang_tidy() {
+  staged_files=$(git diff --cached --name-only --diff-filter=ACM | grep "[.]\(cpp\|h\|hpp\)$" | grep -v '/generated/')
+
+  num_staged_files=0
+  if [ -n "${staged_files}" ]; then
+    num_staged_files=$(printf "%s\n" "$staged_files" | wc -l)
+  fi
+
+  echo "Linting ${num_staged_files} C++ files with clang-tidy"
+
+  if [ ${num_staged_files} -gt 0 ]; then
+    i=1
+    echo "${staged_files}" | while IFS= read -r file; do
+      printf "\033[1m[%3d/%d] clang-tidy %s\033[0m\n" ${i} ${num_staged_files} "$file"
+      r="$($CLANG_TIDY -checks=$CPP_SERVER_PATH/.clang-tidy -p=$CPP_SERVER_PATH/build/compile_commands.json $BASE_PATH/$file 2>/dev/null)"
+      if [ -n "${r}" ]; then
+        printf "\033[41mERRORS:\033[0m %s\n" "$file"
+        echo "$r"
+        printf "\033[41mCLANG-TIDY:\033[0m Fix clang-tidy errors and try again\n"
+        return 1
+      fi
+      i=$((i + 1))
+    done || exit 1
+  fi
+
+  printf "\033[42mCLANG-TIDY SUCCEEDED\033[0m\n"
+  return 0
+}
+
+test_dependencies &&
+generate_compile_commands &&
+call_clang_tidy
