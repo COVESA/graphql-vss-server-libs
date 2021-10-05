@@ -1,0 +1,28 @@
+{
+  "configurations": [
+    {
+      "name": "Linux",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "/usr/local/include",
+        "/usr/include",
+        "${env:HOME}/usr/include/**"
+      ],
+      "defines": [],
+      "compilerPath": "/usr/bin/clang++",
+      "cStandard": "c99",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "clang-x64",
+      "compilerArgs": ["--std=c++17"],
+      "browse": {
+        "path": [
+          "/usr/include",
+          "/usr/local/include",
+          "${env:HOME}/usr/include",
+          "${workspaceFolder}/vss_cpp_graphql"
+        ]
+      }
+    }
+  ],
+  "version": 4
+}

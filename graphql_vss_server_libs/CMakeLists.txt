@@ -2,7 +2,7 @@ include(GNUInstallDirs)
 include(GenerateExportHeader)
 
 set(GRAPHQL_VSS_SERVER_LIBS_SOVERSION 0)
-set(GRAPHQL_VSS_SERVER_LIBS_VERSION 0.1.0)
+set(GRAPHQL_VSS_SERVER_LIBS_VERSION 1.0.0)
 
 add_subdirectory(support)
 add_subdirectory(protocol)
