@@ -1,7 +1,9 @@
 #!/bin/sh
 
-# Copyright (C) 2021, Bayerische Motoren Werke Aktiengesellschaft (BMW AG), Author: Alexander Domin (Alexander.Domin@bmw.de)
-# Copyright (C) 2021, ProFUSION Sistemas e Soluções LTDA, Author: Gabriel Fernandes (g7fernandes@profusion.mobi)
+# Copyright (C) 2021, Bayerische Motoren Werke Aktiengesellschaft (BMW AG),
+#   Author: Alexander Domin (Alexander.Domin@bmw.de)
+# Copyright (C) 2021, ProFUSION Sistemas e Soluções LTDA,
+#   Author: Gabriel Fernandes (g7fernandes@profusion.mobi)
 #
 # SPDX-License-Identifier: MPL-2.0
 #

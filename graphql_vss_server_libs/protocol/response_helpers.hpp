@@ -1,3 +1,16 @@
+// Copyright (C) 2021, Bayerische Motoren Werke Aktiengesellschaft (BMW AG),
+//   Author: Alexander Domin (Alexander.Domin@bmw.de)
+// Copyright (C) 2021, ProFUSION Sistemas e Soluções LTDA,
+//   Author: Gustavo Sverzut Barbieri (barbieri@profusion.mobi)
+//   Author: Gabriel Fernandes (g7fernandes@profusion.mobi)
+//
+// SPDX-License-Identifier: MPL-2.0
+//
+// This Source Code Form is subject to the terms of the
+// Mozilla Public License, v. 2.0. If a copy of the MPL was
+// not distributed with this file, You can obtain one at
+// http://mozilla.org/MPL/2.0/.
+
 #pragma once
 
 #include <graphqlservice/GraphQLResponse.h>
@@ -13,7 +26,7 @@
 namespace graphql {
 namespace response {
 namespace helpers {
-static inline std::tuple<std::string, std::string, response::Value>
+[[maybe_unused]] static inline std::tuple<std::string, std::string, response::Value>
 toMessageParts(response::Value&& message)
 {
 	if (message.type() != response::Type::Map)
@@ -52,7 +65,7 @@ toMessageParts(response::Value&& message)
 	return std::make_tuple(std::move(type), std::move(id), std::move(payload));
 }
 
-static inline std::tuple<std::string, std::string, response::Value>
+[[maybe_unused]] static inline std::tuple<std::string, std::string, response::Value>
 toOperationDefinitionParts(response::Value&& payload)
 {
 	if (payload.type() != response::Type::Map)
@@ -106,7 +119,7 @@ createResponse(const std::string_view& type, const std::string_view& id, respons
 	return response;
 }
 
-static inline response::Value createErrorResponse(
+[[maybe_unused]] static inline response::Value createErrorResponse(
 	const std::string_view& type, const std::string_view& id, const std::exception& ex)
 {
 	static const std::array<std::pair<std::string_view, int>, 1> errorMapping = {

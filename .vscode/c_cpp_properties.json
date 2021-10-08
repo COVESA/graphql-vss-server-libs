@@ -19,7 +19,7 @@
           "/usr/include",
           "/usr/local/include",
           "${env:HOME}/usr/include",
-          "${workspaceFolder}/vss_cpp_graphql"
+          "${workspaceFolder}/graphql_vss_server_libs"
         ]
       }
     }
