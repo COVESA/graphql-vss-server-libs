@@ -64,6 +64,10 @@ pkg_check_modules(DLT REQUIRED automotive-dlt)
 
 find_package(pegtl 3.2.0 REQUIRED)
 find_package(cppgraphqlgen 3.5.0 REQUIRED)
+find_package(jwt-cpp)
+if (${jwt-cpp_VERSION} VERSION_LESS 0.5.0)
+  message(SEND_ERROR "Found jwt-cpp version ${jwt-cpp_VERSION}, but >= 0.5.0 is required.")
+endif()
 
 if(DEFINED CMAKE_PREFIX_PATH)
 	# The includes of cppgraphqlgen can't be found without this if it is
@@ -72,6 +76,21 @@ if(DEFINED CMAKE_PREFIX_PATH)
 	  	message(STATUS "CMAKE_PREFIX_PATH: " ${ITEM})
 	  	include_directories(SYSTEM "${ITEM}/include")
 	endforeach()
+endif()
+
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+  message("Activating DEBUG flags")
+  if (SANITIZE_ADDRESS AND SANITIZE_THREAD)
+    message(FATAL_ERROR "Address sanitizer not allowed with Thread sanitizer.")
+  elseif (SANITIZE_ADDRESS)
+    message("Activating ADDRESS sanitizer")
+    string(APPEND CMAKE_CXX_FLAGS_DEBUG
+        " -fsanitize=address -fno-omit-frame-pointer ")
+  elseif (SANITIZE_THREAD)
+    message("Activating THREAD sanitizer")
+    string(APPEND CMAKE_CXX_FLAGS_DEBUG
+        " -fsanitize=thread ")
+  endif()
 endif()
 
 ### Compile Library
