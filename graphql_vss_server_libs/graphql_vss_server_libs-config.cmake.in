@@ -5,8 +5,8 @@ find_dependency(PkgConfig)
 find_dependency(Threads)
 find_dependency(Boost 1.71 COMPONENTS system program_options)
 
-find_dependency(CommonAPI 3.2)
-find_dependency(CommonAPI-SomeIP 3.2)
+find_dependency(CommonAPI @COMMONAPI_RELEASE@)
+find_dependency(CommonAPI-SomeIP @COMMONAPI_RELEASE@)
 pkg_check_modules(DLT automotive-dlt)
 
 find_dependency(pegtl 3.2.0)

@@ -48,8 +48,18 @@ find_package(PkgConfig)
 find_package(Threads REQUIRED)
 find_package(Boost 1.71 COMPONENTS system program_options REQUIRED)
 
-find_package(CommonAPI 3.2 REQUIRED)
-find_package(CommonAPI-SomeIP 3.2 REQUIRED)
+if (COMMONAPI_RELEASE)
+  if (${COMMONAPI_RELEASE} VERSION_LESS 3.1 OR ${COMMONAPI_RELEASE} VERSION_GREATER 3.2)
+    message(WARNING
+      "Specified CommonAPI release ${COMMONAPI_RELEASE} not tested! \
+       The libraries may fail to compile.")
+  endif()
+else()
+  set(COMMONAPI_RELEASE 3.2)
+endif()
+
+find_package(CommonAPI ${COMMONAPI_RELEASE} REQUIRED)
+find_package(CommonAPI-SomeIP ${COMMONAPI_RELEASE} REQUIRED)
 pkg_check_modules(DLT REQUIRED automotive-dlt)
 
 find_package(pegtl 3.2.0 REQUIRED)
