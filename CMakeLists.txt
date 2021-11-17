@@ -9,7 +9,6 @@
 # Mozilla Public License, v. 2.0. If a copy of the MPL was
 # not distributed with this file, You can obtain one at
 # http://mozilla.org/MPL/2.0/.
-
 project(vss-graphql-server-libs)
 
 cmake_minimum_required(VERSION 3.13.0)
@@ -70,12 +69,12 @@ if (${jwt-cpp_VERSION} VERSION_LESS 0.5.0)
 endif()
 
 if(DEFINED CMAKE_PREFIX_PATH)
-	# The includes of cppgraphqlgen can't be found without this if it is
+  # The includes of cppgraphqlgen can't be found without this if it is
   # installed outside /usr/local
-  	foreach(ITEM ${CMAKE_PREFIX_PATH})
-	  	message(STATUS "CMAKE_PREFIX_PATH: " ${ITEM})
-	  	include_directories(SYSTEM "${ITEM}/include")
-	endforeach()
+    foreach(ITEM ${CMAKE_PREFIX_PATH})
+      message(STATUS "CMAKE_PREFIX_PATH: " ${ITEM})
+      include_directories(SYSTEM "${ITEM}/include")
+  endforeach()
 endif()
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")

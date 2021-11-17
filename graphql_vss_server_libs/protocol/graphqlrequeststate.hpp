@@ -16,9 +16,9 @@
 #include <boost/asio.hpp>
 
 #undef NO_DATA // Removes definition on netdb.h that may conflict enum items
-			   // of CommonAPI generated files. This is included by
-			   // <boost/asio.hpp>, <boost/asio/steady_timer.hpp> and
-			   // <boost/asio/signal_set.hpp>
+               // of CommonAPI generated files. This is included by
+               // <boost/asio.hpp>, <boost/asio/steady_timer.hpp> and
+               // <boost/asio/signal_set.hpp>
 
 #include <graphqlservice/GraphQLService.h>
 #include <boost/signals2.hpp>
@@ -35,110 +35,110 @@ using namespace graphql;
 class GraphQLRequestState : public service::RequestState
 {
 public:
-	GraphQLRequestState(const GraphQLRequestHandlers& handlers, service::Request& executableSchema,
-		std::shared_ptr<const ClientPermissions> permissions, SingletonStorage& singletonStorage,
-		bool isSubscription);
+    GraphQLRequestState(const GraphQLRequestHandlers& handlers, service::Request& executableSchema,
+        std::shared_ptr<const ClientPermissions> permissions, SingletonStorage& singletonStorage,
+        bool isSubscription);
 
-	GraphQLRequestState(GraphQLRequestState const&) = delete;
-	GraphQLRequestState(GraphQLRequestState&&) = delete;
+    GraphQLRequestState(GraphQLRequestState const&) = delete;
+    GraphQLRequestState(GraphQLRequestState&&) = delete;
 
-	static inline std::shared_ptr<GraphQLRequestState>
-	fromRequestState(const std::shared_ptr<RequestState>& requestState)
-	{
-		return std::static_pointer_cast<GraphQLRequestState>(requestState);
-	}
+    static inline std::shared_ptr<GraphQLRequestState>
+    fromRequestState(const std::shared_ptr<RequestState>& requestState)
+    {
+        return std::static_pointer_cast<GraphQLRequestState>(requestState);
+    }
 
-	template <typename... T>
-	inline void validate(const T&... requiredPermissions)
-	{
-		if (m_didPermissionsCheck)
-			return;
-		if (!m_permissions)
-		{
-			m_failedPermissionsCheck = true;
-			throw ContextException();
-		}
-		try
-		{
-			m_permissions->validate(requiredPermissions...);
-		}
-		catch (PermissionException& ex)
-		{
-			m_failedPermissionsCheck = true;
-			throw;
-		}
-	}
+    template <typename... T>
+    inline void validate(const T&... requiredPermissions)
+    {
+        if (m_didPermissionsCheck)
+            return;
+        if (!m_permissions)
+        {
+            m_failedPermissionsCheck = true;
+            throw ContextException();
+        }
+        try
+        {
+            m_permissions->validate(requiredPermissions...);
+        }
+        catch (PermissionException& ex)
+        {
+            m_failedPermissionsCheck = true;
+            throw;
+        }
+    }
 
-	template <typename TSignal>
-	inline void observe(boost::signals2::signal<void(TSignal)>& signal)
-	{
-		if (!m_isSubscription)
-			return;
+    template <typename TSignal>
+    inline void observe(boost::signals2::signal<void(TSignal)>& signal)
+    {
+        if (!m_isSubscription)
+            return;
 
-		addScopedSignalConnection(signal.connect([this](TSignal) {
-			this->notify();
-		}));
-	}
+        addScopedSignalConnection(signal.connect([this](TSignal) {
+            this->notify();
+        }));
+    }
 
-	template <typename TSingletonValue>
-	inline std::shared_ptr<TSingletonValue> getSingleton()
-	{
-		auto key = Singleton<TSingletonValue>::getKey();
+    template <typename TSingletonValue>
+    inline std::shared_ptr<TSingletonValue> getSingleton()
+    {
+        auto key = Singleton<TSingletonValue>::getKey();
 
-		std::unique_lock lock(m_usedSingletonsLock);
-		auto itr = m_usedSingletons.find(key);
-		if (itr != m_usedSingletons.end())
-		{
-			auto ref = typename Singleton<TSingletonValue>::Ref(itr->second);
-			lock.unlock();
-			return ref.value();
-		}
+        std::unique_lock lock(m_usedSingletonsLock);
+        auto itr = m_usedSingletons.find(key);
+        if (itr != m_usedSingletons.end())
+        {
+            auto ref = typename Singleton<TSingletonValue>::Ref(itr->second);
+            lock.unlock();
+            return ref.value();
+        }
 
-		auto ref = m_singletonStorage.get<TSingletonValue>();
-		m_usedSingletons.insert({ key, ref.base() });
-		lock.unlock();
+        auto ref = m_singletonStorage.get<TSingletonValue>();
+        m_usedSingletons.insert({ key, ref.base() });
+        lock.unlock();
 
-		auto singleton = ref.value();
+        auto singleton = ref.value();
 
-		if constexpr (has_signal<TSingletonValue>::value)
-			observe(singleton->signal);
+        if constexpr (has_signal<TSingletonValue>::value)
+            observe(singleton->signal);
 
-		return singleton;
-	}
+        return singleton;
+    }
 
-	virtual void
-	setSubscriptionmIntervalBetweenDeliveries(std::chrono::milliseconds intervalInMs) noexcept
-	{
-	}
+    virtual void
+    setSubscriptionmIntervalBetweenDeliveries(std::chrono::milliseconds intervalInMs) noexcept
+    {
+    }
 
 protected:
-	const GraphQLRequestHandlers& m_handlers;
-	service::Request& m_executableSchema;
-	const std::shared_ptr<const ClientPermissions> m_permissions;
-	SingletonStorage& m_singletonStorage;
-	const bool m_isSubscription;
-	bool m_didPermissionsCheck;
-	bool m_failedPermissionsCheck = false;
-	SpinLock m_usedSingletonsLock = SpinLock(this);
-	std::map<BaseSingleton::Key, BaseSingleton::Ref> m_usedSingletons;
+    const GraphQLRequestHandlers& m_handlers;
+    service::Request& m_executableSchema;
+    const std::shared_ptr<const ClientPermissions> m_permissions;
+    SingletonStorage& m_singletonStorage;
+    const bool m_isSubscription;
+    bool m_didPermissionsCheck;
+    bool m_failedPermissionsCheck = false;
+    SpinLock m_usedSingletonsLock = SpinLock(this);
+    std::map<BaseSingleton::Key, BaseSingleton::Ref> m_usedSingletons;
 
-	virtual void addScopedSignalConnection(boost::signals2::scoped_connection&& con) noexcept
-	{
-	}
+    virtual void addScopedSignalConnection(boost::signals2::scoped_connection&& con) noexcept
+    {
+    }
 
-	virtual void notify() noexcept
-	{
-	}
+    virtual void notify() noexcept
+    {
+    }
 
-	template <class T>
-	class has_signal
-	{
-		template <class U>
-		static char test(decltype(&U::signal));
-		template <class U>
-		static int test(...);
+    template <class T>
+    class has_signal
+    {
+        template <class U>
+        static char test(decltype(&U::signal));
+        template <class U>
+        static int test(...);
 
-	public:
-		static constexpr bool value = sizeof(test<T>(nullptr)) == sizeof(char);
-	};
+    public:
+        static constexpr bool value = sizeof(test<T>(nullptr)) == sizeof(char);
+    };
 };

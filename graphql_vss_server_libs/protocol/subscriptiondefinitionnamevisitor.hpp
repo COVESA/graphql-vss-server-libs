@@ -31,110 +31,110 @@ using namespace graphql::service;
 class FragmentDefinitionVisitor
 {
 public:
-	FragmentDefinitionVisitor(const response::Value& variables);
+    FragmentDefinitionVisitor(const response::Value& variables);
 
-	FragmentMap getFragments();
+    FragmentMap getFragments();
 
-	void visit(const peg::ast_node& fragmentDefinition);
+    void visit(const peg::ast_node& fragmentDefinition);
 
 private:
-	const response::Value& _variables;
+    const response::Value& _variables;
 
-	FragmentMap _fragments;
+    FragmentMap _fragments;
 };
 
 FragmentDefinitionVisitor::FragmentDefinitionVisitor(const response::Value& variables)
-	: _variables(variables)
+    : _variables(variables)
 {
 }
 
 FragmentMap FragmentDefinitionVisitor::getFragments()
 {
-	FragmentMap result(std::move(_fragments));
-	return result;
+    FragmentMap result(std::move(_fragments));
+    return result;
 }
 
 void FragmentDefinitionVisitor::visit(const peg::ast_node& fragmentDefinition)
 {
-	_fragments.emplace(fragmentDefinition.children.front()->string_view(),
-		Fragment(fragmentDefinition, _variables));
+    _fragments.emplace(fragmentDefinition.children.front()->string_view(),
+        Fragment(fragmentDefinition, _variables));
 }
 
 class SubscriptionDefinitionNameVisitor
 {
 public:
-	SubscriptionDefinitionNameVisitor(FragmentMap&& fragments);
+    SubscriptionDefinitionNameVisitor(FragmentMap&& fragments);
 
-	std::string getName();
+    std::string getName();
 
-	void visit(const peg::ast_node& operationDefinition);
+    void visit(const peg::ast_node& operationDefinition);
 
 private:
-	void visitField(const peg::ast_node& field);
-	void visitFragmentSpread(const peg::ast_node& fragmentSpread);
-	void visitInlineFragment(const peg::ast_node& inlineFragment);
+    void visitField(const peg::ast_node& field);
+    void visitFragmentSpread(const peg::ast_node& fragmentSpread);
+    void visitInlineFragment(const peg::ast_node& inlineFragment);
 
-	SubscriptionName _field;
-	FragmentMap _fragments;
+    SubscriptionName _field;
+    FragmentMap _fragments;
 };
 
 SubscriptionDefinitionNameVisitor::SubscriptionDefinitionNameVisitor(FragmentMap&& fragments)
-	: _fragments(std::move(fragments))
+    : _fragments(std::move(fragments))
 {
 }
 
 void SubscriptionDefinitionNameVisitor::visit(const peg::ast_node& operationDefinition)
 {
-	const auto& selection = *operationDefinition.children.back();
+    const auto& selection = *operationDefinition.children.back();
 
-	for (const auto& child : selection.children)
-	{
-		if (child->is_type<peg::field>())
-		{
-			visitField(*child);
-		}
-		else if (child->is_type<peg::fragment_spread>())
-		{
-			visitFragmentSpread(*child);
-		}
-		else if (child->is_type<peg::inline_fragment>())
-		{
-			visitInlineFragment(*child);
-		}
-	}
+    for (const auto& child : selection.children)
+    {
+        if (child->is_type<peg::field>())
+        {
+            visitField(*child);
+        }
+        else if (child->is_type<peg::fragment_spread>())
+        {
+            visitFragmentSpread(*child);
+        }
+        else if (child->is_type<peg::inline_fragment>())
+        {
+            visitInlineFragment(*child);
+        }
+    }
 }
 
 std::string SubscriptionDefinitionNameVisitor::getName()
 {
-	return std::move(_field);
+    return std::move(_field);
 }
 
 void SubscriptionDefinitionNameVisitor::visitField(const peg::ast_node& field)
 {
-	peg::on_first_child<peg::field_name>(field, [this](const peg::ast_node& child) {
-		_field = child.string_view();
-	});
+    peg::on_first_child<peg::field_name>(field, [this](const peg::ast_node& child) {
+        _field = child.string_view();
+    });
 }
 
 void SubscriptionDefinitionNameVisitor::visitFragmentSpread(const peg::ast_node& fragmentSpread)
 {
-	const auto name = fragmentSpread.children.front()->string_view();
-	auto itr = _fragments.find(name);
+    const auto name = fragmentSpread.children.front()->string_view();
+    auto itr = _fragments.find(name);
 
-	for (const auto& selection : itr->second.getSelection().children)
-	{
-		visit(*selection);
-	}
+    for (const auto& selection : itr->second.getSelection().children)
+    {
+        visit(*selection);
+    }
 }
 
 void SubscriptionDefinitionNameVisitor::visitInlineFragment(const peg::ast_node& inlineFragment)
 {
-	peg::on_first_child<peg::selection_set>(inlineFragment, [this](const peg::ast_node& child) {
-		for (const auto& selection : child.children)
-		{
-			visit(*selection);
-		}
-	});
+    peg::on_first_child<peg::selection_set>(inlineFragment, [this](const peg::ast_node& child) {
+        for (const auto& selection : child.children)
+        {
+            visit(*selection);
+        }
+    });
 }
 
 } // namespace graphql

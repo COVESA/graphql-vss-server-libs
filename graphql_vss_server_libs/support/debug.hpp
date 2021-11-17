@@ -55,27 +55,27 @@
 // avoid "uninitialized variables" if they were just used to debug. This
 // should impose no runtime penalty as optimizations will remove such blocks
 #define dbg(stmt)                                                                                  \
-	do                                                                                             \
-	{                                                                                              \
-		if (0)                                                                                     \
-		{                                                                                          \
-			std::cerr << stmt;                                                                     \
-		}                                                                                          \
-	} while (0)
+    do                                                                                             \
+    {                                                                                              \
+        if (0)                                                                                     \
+        {                                                                                          \
+            std::cerr << stmt;                                                                     \
+        }                                                                                          \
+    } while (0)
 #else
 #include <thread>
 #include <mutex>
 #include <sstream>
 extern GRAPHQL_VSS_SERVER_LIBS_SUPPORT_EXPORT std::mutex _dbg_lock;
 #define dbg(stmt)                                                                                  \
-	do                                                                                             \
-	{                                                                                              \
-		std::lock_guard<std::mutex> guard(_dbg_lock);                                              \
-		std::ostringstream dbg_message;                                                            \
-		dbg_message << "DBG:[T:" << std::this_thread::get_id() << "] " << stmt << COLOR_RESET      \
-					<< std::endl;                                                                  \
-		std::cerr << dbg_message.str();                                                            \
-	} while (0)
+    do                                                                                             \
+    {                                                                                              \
+        std::lock_guard<std::mutex> guard(_dbg_lock);                                              \
+        std::ostringstream dbg_message;                                                            \
+        dbg_message << "DBG:[T:" << std::this_thread::get_id() << "] " << stmt << COLOR_RESET      \
+                    << std::endl;                                                                  \
+        std::cerr << dbg_message.str();                                                            \
+    } while (0)
 #endif
 
 // DEBUG_LOCKS will print out the locks and unlocks as well as introduce
@@ -83,47 +83,47 @@ extern GRAPHQL_VSS_SERVER_LIBS_SUPPORT_EXPORT std::mutex _dbg_lock;
 // compete for it and exercise locks
 #if !GRAPHQL_VSS_SERVER_LIBS_SUPPORT_DEBUG_LOCKS
 #define debug_will_lock(lock, what)                                                                \
-	do                                                                                             \
-	{                                                                                              \
-	} while (0)
+    do                                                                                             \
+    {                                                                                              \
+    } while (0)
 #define debug_did_lock(lock, what)                                                                 \
-	do                                                                                             \
-	{                                                                                              \
-	} while (0)
+    do                                                                                             \
+    {                                                                                              \
+    } while (0)
 #define debug_will_unlock(lock, what)                                                              \
-	do                                                                                             \
-	{                                                                                              \
-	} while (0)
+    do                                                                                             \
+    {                                                                                              \
+    } while (0)
 #define debug_did_unlock(lock, what)                                                               \
-	do                                                                                             \
-	{                                                                                              \
-	} while (0)
+    do                                                                                             \
+    {                                                                                              \
+    } while (0)
 #else
 #include <thread>
 #include <chrono>
 #define DEBUG_LOCK_TIMEOUT std::chrono::milliseconds(100)
 #define debug_will_lock(lock, what)                                                                \
-	do                                                                                             \
-	{                                                                                              \
-		dbg(COLOR_BLUE ">>> will lock " << (what) << " using " << (&lock) << "...");               \
-		std::this_thread::sleep_for(DEBUG_LOCK_TIMEOUT);                                           \
-	} while (0)
+    do                                                                                             \
+    {                                                                                              \
+        dbg(COLOR_BLUE ">>> will lock " << (what) << " using " << (&lock) << "...");               \
+        std::this_thread::sleep_for(DEBUG_LOCK_TIMEOUT);                                           \
+    } while (0)
 #define debug_did_lock(lock, what)                                                                 \
-	do                                                                                             \
-	{                                                                                              \
-		dbg(COLOR_YELLOW ">>> did lock " << (what) << " using " << (&lock) << "!");                \
-		std::this_thread::sleep_for(DEBUG_LOCK_TIMEOUT);                                           \
-	} while (0)
+    do                                                                                             \
+    {                                                                                              \
+        dbg(COLOR_YELLOW ">>> did lock " << (what) << " using " << (&lock) << "!");                \
+        std::this_thread::sleep_for(DEBUG_LOCK_TIMEOUT);                                           \
+    } while (0)
 #define debug_will_unlock(lock, what)                                                              \
-	do                                                                                             \
-	{                                                                                              \
-		dbg(COLOR_YELLOW "<<< will unlock " << (what) << " using " << (&lock) << "...");           \
-		std::this_thread::sleep_for(DEBUG_LOCK_TIMEOUT);                                           \
-	} while (0)
+    do                                                                                             \
+    {                                                                                              \
+        dbg(COLOR_YELLOW "<<< will unlock " << (what) << " using " << (&lock) << "...");           \
+        std::this_thread::sleep_for(DEBUG_LOCK_TIMEOUT);                                           \
+    } while (0)
 #define debug_did_unlock(lock, what)                                                               \
-	do                                                                                             \
-	{                                                                                              \
-		dbg(COLOR_BLUE "<<< did unlock " << (what) << " using " << (&lock) << "!");                \
-		std::this_thread::sleep_for(DEBUG_LOCK_TIMEOUT);                                           \
-	} while (0)
+    do                                                                                             \
+    {                                                                                              \
+        dbg(COLOR_BLUE "<<< did unlock " << (what) << " using " << (&lock) << "!");                \
+        std::this_thread::sleep_for(DEBUG_LOCK_TIMEOUT);                                           \
+    } while (0)
 #endif
