@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Copyright (C) 2021, Bayerische Motoren Werke Aktiengesellschaft (BMW AG),
 #   Author: Alexander Domin (Alexander.Domin@bmw.de)
@@ -19,6 +19,48 @@ BASE_PATH="$(git rev-parse --show-toplevel)"
 LIB_VSS_PATH="$BASE_PATH"
 CMAKE="cmake"
 CLANG_TIDY="clang-tidy"
+
+while read -r line; do
+  STAGED_C_FILES_ARRAY+=("$line")
+done <<< "$(git diff --cached --diff-filter=ACMR --oneline --name-only)"
+
+if [ -n "$CMAKE_PREFIX_PATH" ]; then
+  IFS=';' read -ra CMAKE_PATHS <<< "$CMAKE_PREFIX_PATH"
+  for ITEM in "${CMAKE_PATHS[@]}"; do
+    LINKER_PATHS+=" -L$ITEM"
+  done
+fi
+
+# checks if array contains a given element `array_contains [array] [element]`
+array_contains () {
+  local array="$1[@]"
+  local seeking=$2
+  local in=1
+  for element in "${!array}"; do
+      if [[ $element == "$seeking" ]]; then
+          in=0
+          break
+      fi
+  done
+  return $in
+}
+
+check_unstaged_modifications() {
+  local WARN_FLAG
+  WARN_FLAG=0
+  for F in $(git diff --diff-filter=ACMR --oneline --name-only); do
+    if array_contains STAGED_C_FILES_ARRAY "$F"; then
+      printf "\033[0;31m Warning!\033[0m \033[1m Modified file not commited:\033[0m %s\n" "$F"
+      WARN_FLAG=1
+      sleep 1
+    fi
+  done
+  if [[ $WARN_FLAG == 1 ]]; then
+    printf "\033[0m \033[1mMake sure that you are not forgeting to stage the files above!\033[0m\n"
+    echo "Commit process will continue in 5s. Do a Ctrl + C to abort..."
+    sleep 5
+  fi
+}
 
 test_dependencies() {
   if ! [ -x "$(command -v $CMAKE)" ]; then
@@ -41,8 +83,15 @@ generate_compile_commands() {
       return 1
     fi
 
-    if cmake -DCMAKE_CXX_COMPILER=$(which clang++) -B"$LIB_VSS_PATH"/build -S"$LIB_VSS_PATH"; then
-      printf "\033[41mIt was not possible generate the file compile_comands.json\033[0m\n"
+    if ! cmake -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" -DCMAKE_STATIC_LINKER_FLAGS="" \
+         -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld $LINKER_PATHS" \
+         -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld $LINKER_PATHS" -B"$LIB_VSS_PATH"/build -S"$LIB_VSS_PATH";
+      then
+        printf "\033[41mIt was not possible generate the file compile_commands.json\033[0m\n"
+        if [ -z "$CMAKE_PREFIX_PATH" ]; then
+          printf "If packages aren't being found, try exporting CMAKE_PREFIX_PATH passing to\n"
+          printf "the path to the package.\n"
+        fi
       return 1
     fi
   fi
@@ -80,4 +129,5 @@ call_clang_tidy() {
 
 test_dependencies &&
 generate_compile_commands &&
-call_clang_tidy
+call_clang_tidy &&
+check_unstaged_modifications
