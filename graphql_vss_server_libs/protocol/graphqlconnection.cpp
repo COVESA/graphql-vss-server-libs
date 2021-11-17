@@ -13,6 +13,8 @@
 
 #include <graphql_vss_server_libs/support/debug.hpp>
 #include <graphql_vss_server_libs/support/log.hpp>
+// Added to backward compatibility with older versions of DLT Daemon
+#include <graphql_vss_server_libs/support/dlt_helpers.hpp>
 
 #include "authorizer.hpp"
 #include "exceptions.hpp"
@@ -20,9 +22,6 @@
 #include "response_helpers.hpp"
 
 #include "graphqlconnection.hpp"
-
-// Added to backward compatibility with older versions of DLT Daemon
-#include "dlt_helpers.hpp"
 
 GraphQLConnection::~GraphQLConnection()
 {

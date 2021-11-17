@@ -14,6 +14,8 @@
 
 #include <graphqlservice/internal/Grammar.h>
 #include <tao/pegtl/contrib/parse_tree.hpp>
+// Added to backward compatibility with older versions of DLT Daemon
+#include <graphql_vss_server_libs/support/dlt_helpers.hpp>
 
 #include <graphql_vss_server_libs/support/debug.hpp>
 #include <graphql_vss_server_libs/support/log.hpp>
@@ -24,9 +26,6 @@
 #include "subscriptiondefinitionnamevisitor.hpp"
 
 #include "graphqlconnectionoperation.hpp"
-
-// Added to backward compatibility with older versions of DLT Daemon
-#include "dlt_helpers.hpp"
 
 #if GRAPHQL_VSS_SERVER_LIBS_PROTOCOL_DEBUG
 #define CONNECTION_OPERATION_CHECK_MAIN_THREAD checkThread(__PRETTY_FUNCTION__)

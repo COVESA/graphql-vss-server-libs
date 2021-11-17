@@ -66,6 +66,7 @@ install(
     singleton.hpp
     spinlock.hpp
     type_traits_extras.hpp
+    dlt_helpers.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/graphql_vss_server_libs-support_export.h
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/graphql_vss_server_libs/support
 )

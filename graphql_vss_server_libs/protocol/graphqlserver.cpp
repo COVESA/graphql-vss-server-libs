@@ -21,8 +21,6 @@
 
 #include "graphqlserver.hpp"
 
-// Added to backward compatibility with older versions of DLT Daemon
-#include "dlt_helpers.hpp"
 
 GraphQLServer::GraphQLServer(websocketpp::lib::asio::io_service* io_service, Authorizer& authorizer,
     service::Request& executableSchema)
