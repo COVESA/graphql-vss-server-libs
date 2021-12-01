@@ -12,14 +12,15 @@
 // not distributed with this file, You can obtain one at
 // http://mozilla.org/MPL/2.0/.
 
+#include <graphqlservice/GraphQLResponse.h>
 #include <graphqlservice/internal/Grammar.h>
 #include <tao/pegtl/contrib/parse_tree.hpp>
-// Added to backward compatibility with older versions of DLT Daemon
-#include <graphql_vss_server_libs/support/dlt_helpers.hpp>
 
 #include <graphql_vss_server_libs/support/debug.hpp>
 #include <graphql_vss_server_libs/support/log.hpp>
 #include <graphql_vss_server_libs/support/spinlock.hpp>
+// Added to backward compatibility with older versions of DLT Daemon
+#include <graphql_vss_server_libs/support/dlt_helpers.hpp>
 
 #include "messagetypes.hpp"
 #include "response_helpers.hpp"
@@ -236,6 +237,13 @@ void GraphQLConnectionOperationRegular::stop() noexcept
     m_stopped = true;
 }
 
+/*
+This function parses the query to an AST tree that the executable schema uses to
+transverse the graph, calling the resolver functions. Since each query runs in
+a thread, we use a launch::deferred.
+If an exception happens in the Request.resolve() function, it is caught and logged
+to DLT, before being thrown and terminate the process.
+*/
 void GraphQLConnectionOperationRegular::resolveInAThread() noexcept
 {
     auto onReply = m_handlers.onReply; // copy before checking m_stopped to avoid race
@@ -259,36 +267,43 @@ void GraphQLConnectionOperationRegular::resolveInAThread() noexcept
 #ifdef GRAPHQL_VSS_SERVER_LIBS_PROTOCOL_DEBUG
     auto startTime = std::chrono::high_resolution_clock::now();
 #endif
-
-    auto response = m_executableSchema
-                        .resolve(std::launch::deferred,
-                            getSharedPtr(),
-                            ast,
-                            m_operationName,
-                            std::move(m_variables))
-                        .get();
+    try
+    {
+        auto response =
+            m_executableSchema
+                .resolve(std::launch::deferred, getSharedPtr(), ast, m_operationName, std::move(m_variables))
+                .get();
 #ifdef GRAPHQL_VSS_SERVER_LIBS_PROTOCOL_DEBUG
-    auto endTime = std::chrono::high_resolution_clock::now();
-    auto elapsed = endTime - startTime;
+        auto endTime = std::chrono::high_resolution_clock::now();
+        auto elapsed = endTime - startTime;
 #else
-    std::chrono::milliseconds elapsed(0);
+        std::chrono::milliseconds elapsed(0);
 #endif
 
-    if (m_stopped)
-    {
-        dbg(COLOR_BG_BLUE << "GraphQLConnectionOperation " << this << " id=" << m_id
-                          << ": already stopped, ignore reply");
-        return;
-    }
-    onReply(response::helpers::createResponse(GQL_DATA, m_id, std::move(response)));
-    onReply(response::helpers::createResponse(GQL_COMPLETE, m_id, response::Value()));
+        if (m_stopped)
+        {
+            dbg(COLOR_BG_BLUE << "GraphQLConnectionOperation " << this << " id=" << m_id
+                              << ": already stopped, ignore reply");
+            return;
+        }
+        onReply(response::helpers::createResponse(GQL_DATA, m_id, std::move(response)));
+        onReply(response::helpers::createResponse(GQL_COMPLETE, m_id, response::Value()));
 
-    // not a subscription, thus no need to unsubscribe!
-    m_stopped = true;
-    dbg(COLOR_BG_BLUE << "GraphQLConnectionOperation " << this << " id=" << m_id
-                      << ": complete (auto-stop) [stats: elapsed="
-                      << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count()
-                      << "ms, singletons=" << m_usedSingletons.size() << "]");
+        m_stopped = true;
+        dbg(COLOR_BG_BLUE << "GraphQLConnectionOperation " << this << " id=" << m_id
+                        << ": complete (auto-stop) [stats: elapsed="
+                        << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count()
+                        << "ms, singletons=" << m_usedSingletons.size() << "]");
+    }
+    catch (const std::exception &ex)
+    {
+        // Report to DLT before throwing. Schema errors are catch and and
+        // handled by graphql service.
+        DLT_LOG(dltOperation, DLT_LOG_ERROR, DLT_CSTRING("Resolve ERROR operation="), DLT_PTR(this),
+                DLT_CSTRING(" id="), DLT_SIZED_STRING(m_id.data(), m_id.size()), DLT_CSTRING(": "),
+                DLT_CSTRING(ex.what()));
+        throw ex;
+    }
 
     if (m_failedPermissionsCheck)
     {
@@ -349,6 +364,18 @@ void GraphQLConnectionOperationSubscription::setSubscriptionmIntervalBetweenDeli
     m_intervalBetweenDeliveries = intervalBetweenDeliveries;
 }
 
+/*
+This function parses the query to an AST tree that the executable schema uses to
+transverse the graph, calling the resolver functions. Since each query runs in
+a thread, we use a launch::deferred.
+The function onFutureSubscription is the callback function, called when a
+subscription replies.
+If an exception happens in the Request.subscribe() function, it is caught. If the
+error is a schema_exception (probably caused by a bad query trying to subscribe
+to a nonexistent branch or leaf), the subscription stops and the response to the
+client will contain the error. The process will not terminate upon schema_exceptions
+Other exceptions are logged to DLT, but thrown afterwards.
+*/
 void GraphQLConnectionOperationSubscription::subscribeInAThread() noexcept
 {
     if (m_stopped)
@@ -358,31 +385,62 @@ void GraphQLConnectionOperationSubscription::subscribeInAThread() noexcept
         return;
     }
 
+    DLT_LOG(dltOperation,
+    DLT_LOG_DEBUG,
+    DLT_CSTRING("About to create ast..."));
+
     auto ast = peg::parseString(m_query);
 
     auto spThis = getSharedPtr();
-    m_subscriptionKey = m_executableSchema.subscribe(
-        service::SubscriptionParams { spThis, ast, m_operationName, std::move(m_variables) },
-        std::bind(&GraphQLConnectionOperationSubscription::onFutureSubscription,
-            spThis,
-            std::placeholders::_1));
+    try
+    {
+        m_subscriptionKey = m_executableSchema.subscribe(
+            service::SubscriptionParams { spThis, ast, m_operationName, std::move(m_variables) },
+            std::bind(&GraphQLConnectionOperationSubscription::onFutureSubscription,
+                spThis,
+                std::placeholders::_1));
 
-    m_subscriptionName = getSubscriptionName(ast);
-    dbg(COLOR_BG_BLUE << "GraphQLConnectionOperation " << this << " id=" << m_id
-                      << ": subscribed as key=" << m_subscriptionKey
-                      << " name=" << m_subscriptionName);
+        m_subscriptionName = getSubscriptionName(ast);
+        dbg(COLOR_BG_BLUE << "GraphQLConnectionOperation " << this << " id=" << m_id
+                          << ": subscribed as key=" << m_subscriptionKey
+                          << " name=" << m_subscriptionName);
 
-    DLT_LOG(dltOperation,
-        DLT_LOG_DEBUG,
-        DLT_CSTRING("operation="),
-        DLT_PTR(this),
-        DLT_CSTRING(" id="),
-        DLT_SIZED_STRING(m_id.data(), m_id.size()),
-        DLT_CSTRING(": subscribed key="),
-        DLT_UINT64(m_subscriptionKey));
+        DLT_LOG(dltOperation,
+            DLT_LOG_DEBUG,
+            DLT_CSTRING("operation="),
+            DLT_PTR(this),
+            DLT_CSTRING(" id="),
+            DLT_SIZED_STRING(m_id.data(), m_id.size()),
+            DLT_CSTRING(": subscribed key="),
+            DLT_UINT64(m_subscriptionKey));
 
-    // Do an initial delivery only to this subscription
-    notify();
+        // Do an initial delivery only to this subscription
+        notify();
+    }
+    catch (service::schema_exception &ex)
+    {
+        DLT_LOG(dltOperation, DLT_LOG_ERROR, DLT_CSTRING("Subscription ERROR operation="), DLT_PTR(this),
+                DLT_CSTRING(" id="), DLT_SIZED_STRING(m_id.data(), m_id.size()), DLT_CSTRING(": "),
+                DLT_CSTRING(ex.what()));
+        dbg(COLOR_RED << "Subscription Error on GraphQLConnectionOperation " << this << " id=" << m_id << ": "
+                      << ex.what());
+
+        std::promise<response::Value> promise;
+        response::Value document(response::Type::Map);
+        document.emplace_back(std::string{strData}, response::Value());
+        document.emplace_back(std::string{strErrors}, ex.getErrors());
+        promise.set_value(std::move(document));
+        m_pendingDelivery = promise.get_future();
+        resolveSubscriptionInAThread(std::make_shared<std::future<response::Value>>(std::move(m_pendingDelivery)));
+    }
+    catch (const std::exception &ex)
+    {
+        // Report to DLT before throwing
+        DLT_LOG(dltOperation, DLT_LOG_ERROR, DLT_CSTRING("Subscription ERROR operation="), DLT_PTR(this),
+                DLT_CSTRING(" id="), DLT_SIZED_STRING(m_id.data(), m_id.size()), DLT_CSTRING(": "),
+                DLT_CSTRING(ex.what()));
+        throw ex;
+    }
 }
 
 void GraphQLConnectionOperationSubscription::stop() noexcept

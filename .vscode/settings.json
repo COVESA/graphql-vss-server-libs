@@ -86,4 +86,7 @@
     "CMAKE_SHARED_LINKER_FLAGS": "-fuse-ld=lld -L/usr/local/lib -L${env:HOME}/usr/lib",
     "CMAKE_EXE_LINKER_FLAGS": "-fuse-ld=lld -L/usr/local/lib"
   },
+  "clang-format.language.cpp.fallbackStyle": "LLVM",
+  "clang-format.language.c.style": "Microsoft",
+  "clang-format.language.cpp.style": "Microsoft",
 }
