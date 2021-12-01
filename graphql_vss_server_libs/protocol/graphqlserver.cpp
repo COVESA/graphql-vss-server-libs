@@ -15,6 +15,8 @@
 
 #include <graphql_vss_server_libs/support/debug.hpp>
 #include <graphql_vss_server_libs/support/log.hpp>
+// Added to backward compatibility with older versions of DLT Daemon
+#include <graphql_vss_server_libs/support/dlt_helpers.hpp>
 
 #include "messagetypes.hpp"
 #include "response_helpers.hpp"

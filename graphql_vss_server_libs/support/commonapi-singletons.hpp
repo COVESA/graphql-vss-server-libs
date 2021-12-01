@@ -21,6 +21,8 @@
 #include "singleton.hpp"
 #include "spinlock.hpp"
 #include "type_traits_extras.hpp"
+#include "log.hpp"
+#include "dlt_helpers.hpp"
 
 #include "graphql_vss_server_libs-support_export.h"
 
@@ -102,6 +104,9 @@ struct CommonAPIProxy
 #if GRAPHQL_VSS_SERVER_LIBS_SUPPORT_DEBUG
             msg << ", symbol: " << demangle<Proxy>();
 #endif
+            DLT_LOG(dltCommonAPI,
+                DLT_LOG_ERROR,
+                DLT_UTF8(msg.str().c_str()));
             throw std::runtime_error(msg.str());
         }
 
@@ -117,6 +122,9 @@ struct CommonAPIProxy
 #if GRAPHQL_VSS_SERVER_LIBS_SUPPORT_DEBUG
             msg << ", symbol: " << demangle<Proxy>();
 #endif
+            DLT_LOG(dltCommonAPI,
+                    DLT_LOG_ERROR,
+                    DLT_UTF8(msg.str().c_str()));
             throw std::runtime_error(msg.str());
         }
 
@@ -131,6 +139,14 @@ struct CommonAPIProxy
     CommonAPIProxy(std::shared_ptr<Proxy>&& proxy)
         : proxy(std::move(proxy))
     {
+        DLT_LOG(dltCommonAPI,
+            DLT_LOG_INFO,
+            DLT_CSTRING("Proxy "),
+            DLT_SIZED_UTF8(demangle<Proxy>().data(), demangle<Proxy>().size()),
+            DLT_CSTRING(" "),
+            DLT_SIZED_UTF8(instanceId.data(), instanceId.size()),
+            DLT_CSTRING(" created "),
+            DLT_PTR(this));
         dbg(COLOR_BG_BLUE << "Proxy " << demangle<Proxy>() << " " << instanceId << " created "
                           << this);
     }
@@ -140,6 +156,14 @@ struct CommonAPIProxy
 
     ~CommonAPIProxy()
     {
+        DLT_LOG(dltCommonAPI,
+            DLT_LOG_INFO,
+            DLT_CSTRING("Proxy "),
+            DLT_SIZED_UTF8(demangle<Proxy>().data(), demangle<Proxy>().size()),
+            DLT_CSTRING(" "),
+            DLT_SIZED_UTF8(instanceId.data(), instanceId.size()),
+            DLT_CSTRING(" destroyed "),
+            DLT_PTR(this));
         dbg(COLOR_BG_BLUE << "Proxy " << demangle<Proxy>() << " " << instanceId << " destroyed "
                           << this);
         proxy.reset();
@@ -160,6 +184,14 @@ public:
         : m_proxySingleton(std::move(proxySingleton))
         , m_attribute((m_proxySingleton.value()->proxy.get()->*TGetAttribute)())
     {
+        DLT_LOG(dltCommonAPI,
+            DLT_LOG_INFO,
+            DLT_CSTRING("Attribute "),
+            DLT_SIZED_UTF8(demangle<Proxy>().data(), demangle<Proxy>().size()),
+            DLT_CSTRING(" "),
+            DLT_SIZED_UTF8(demangle<Attribute>().data(), demangle<Attribute>().size()),
+            DLT_CSTRING(" created "),
+            DLT_PTR(this));
         dbg(COLOR_BG_CYAN << "Attribute " << demangle<Proxy>() << " " << demangle<Attribute>()
                           << " created " << this);
     }
@@ -169,6 +201,14 @@ public:
 
     ~CommonAPIBaseProxyAttribute()
     {
+        DLT_LOG(dltCommonAPI,
+            DLT_LOG_INFO,
+            DLT_CSTRING("Attribute "),
+            DLT_SIZED_UTF8(demangle<Proxy>().data(), demangle<Proxy>().size()),
+            DLT_CSTRING(" "),
+            DLT_SIZED_UTF8(demangle<Attribute>().data(), demangle<Attribute>().size()),
+            DLT_CSTRING(" destroyed "),
+            DLT_PTR(this));
         dbg(COLOR_BG_CYAN << "Attribute " << demangle<Proxy>() << " " << demangle<Attribute>()
                           << " destroyed " << this);
     }
@@ -187,6 +227,9 @@ protected:
         {
             std::ostringstream error_message;
             error_message << "Error while fetching for value: " << demangle<Self>();
+            DLT_LOG(dltCommonAPI,
+                DLT_LOG_ERROR,
+                DLT_UTF8(error_message.str().c_str()));
             throw std::runtime_error(error_message.str());
         }
         return response;
@@ -202,6 +245,9 @@ protected:
         {
             std::ostringstream error_message;
             error_message << "Error while changing value: " << demangle<Self>();
+            DLT_LOG(dltCommonAPI,
+                DLT_LOG_ERROR,
+                DLT_UTF8(error_message.str().c_str()));
             throw std::runtime_error(error_message.str());
         }
         return response;
@@ -423,6 +469,10 @@ protected:
             if (cv.wait_for(timerLock, std::chrono::seconds(SUBSCRIPTION_TIMEOUT_SECONDS))
                 == std::cv_status::timeout)
             {
+                DLT_LOG(dltCommonAPI,
+                    DLT_LOG_WARN,
+                    DLT_CSTRING("Subscription timeout! Took too long to send the cached value "),
+                    DLT_PTR(this));
                 dbg(COLOR_BG_MAGENTA "Subscription timeout! Took too long to send the cached value " << this);
             }
         });
@@ -445,6 +495,9 @@ protected:
             std::ostringstream error_message;
             error_message << "Subscription timeout! "
                           << "The event subscribed had no cached value: " << demangle<Self>();
+            DLT_LOG(dltCommonAPI,
+                DLT_LOG_ERROR,
+                DLT_UTF8(error_message.str().c_str()));
             throw std::runtime_error(error_message.str());
         }
     }
@@ -456,6 +509,11 @@ protected:
             this->m_attribute.getChangedEvent().unsubscribe(this->m_subscription.value());
             this->m_subscription.reset();
         }
+        DLT_LOG(dltCommonAPI,
+            DLT_LOG_INFO,
+            DLT_CSTRING("Unsubscribing to changes: "),
+            DLT_SIZED_UTF8(demangle<Attribute>().data(), demangle<Attribute>().size())
+        );
     }
 };
 
@@ -506,6 +564,14 @@ public:
         : m_proxySingleton(std::move(proxySingleton))
         , m_attribute((m_proxySingleton.value()->proxy.get()->*TGetAttribute)())
     {
+        DLT_LOG(dltCommonAPI,
+            DLT_LOG_INFO,
+            DLT_CSTRING("Attribute "),
+            DLT_SIZED_UTF8(demangle<Proxy>().data(), demangle<Proxy>().size()),
+            DLT_CSTRING(" "),
+            DLT_SIZED_UTF8(demangle<Attribute>().data(), demangle<Attribute>().size()),
+            DLT_CSTRING(" created "),
+            DLT_PTR(this));
         dbg(COLOR_BG_MAGENTA << "Attribute " << demangle<Proxy>() << " " << demangle<Attribute>()
                              << " created " << this);
         this->subscribeChanges();
@@ -519,6 +585,14 @@ public:
     virtual ~CommonAPIEventSubscriptionProxyAttribute()
     {
         this->unsubscribeChanges();
+        DLT_LOG(dltCommonAPI,
+            DLT_LOG_INFO,
+            DLT_CSTRING("Attribute "),
+            DLT_SIZED_UTF8(demangle<Proxy>().data(), demangle<Proxy>().size()),
+            DLT_CSTRING(" "),
+            DLT_SIZED_UTF8(demangle<Attribute>().data(), demangle<Attribute>().size()),
+            DLT_CSTRING(" destroyed "),
+            DLT_PTR(this));
         dbg(COLOR_BG_MAGENTA << "Attribute " << demangle<Proxy>() << " " << demangle<Attribute>()
                              << " destroyed " << this);
     }
@@ -532,6 +606,10 @@ protected:
 
     void subscribeChanges()
     {
+        DLT_LOG(dltCommonAPI,
+            DLT_LOG_INFO,
+            DLT_CSTRING("Subscribing to changes"),
+            DLT_SIZED_UTF8(demangle<Attribute>().data(), demangle<Attribute>().size()));
         this->m_subscription =
             this->m_attribute.subscribe(EventHandler::create([this](auto&& args) {
                 this->processEvent(std::move(args));
@@ -542,6 +620,10 @@ protected:
     {
         if (this->m_subscription.has_value())
         {
+            DLT_LOG(dltCommonAPI,
+                DLT_LOG_INFO,
+                DLT_CSTRING("Unsubscribing to changes"),
+                DLT_SIZED_UTF8(demangle<Attribute>().data(), demangle<Attribute>().size()));
             this->m_attribute.unsubscribe(this->m_subscription.value());
             this->m_subscription.reset();
         }

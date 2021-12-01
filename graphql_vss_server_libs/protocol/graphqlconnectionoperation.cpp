@@ -297,7 +297,7 @@ void GraphQLConnectionOperationRegular::resolveInAThread() noexcept
     }
     catch (const std::exception &ex)
     {
-        // Report to DLT before throwing. Schema errors are catch and and
+        // Report to DLT before throwing. Schema errors are catch and
         // handled by graphql service.
         DLT_LOG(dltOperation, DLT_LOG_ERROR, DLT_CSTRING("Resolve ERROR operation="), DLT_PTR(this),
                 DLT_CSTRING(" id="), DLT_SIZED_STRING(m_id.data(), m_id.size()), DLT_CSTRING(": "),
