@@ -41,7 +41,7 @@ struct pointer_member_traits<M C::*>
 };
 
 template <typename AttributeGetterPointer>
-struct member_conversion_traits
+struct member_implementation_traits
 {
     using getter_type = pointer_member_traits<AttributeGetterPointer>;
     using container_type = typename getter_type::container_type;
@@ -51,6 +51,6 @@ struct member_conversion_traits
         typename function_signature<typename getter_type::member_type>::arguments_types;
 };
 
-#define CONVERSION_TRAITS(_value, _getter)                                                         \
-    member_conversion_traits<decltype(&_value::_getter)>::container_type,                          \
-        member_conversion_traits<decltype(&_value::_getter)>::return_value, &_value::_getter
+#define IMPLEMENTATION_TRAITS(_value, _getter)                                                         \
+    member_implementation_traits<decltype(&_value::_getter)>::container_type,                          \
+        member_implementation_traits<decltype(&_value::_getter)>::return_value, &_value::_getter
