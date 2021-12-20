@@ -89,4 +89,7 @@
   "clang-format.language.cpp.fallbackStyle": "LLVM",
   "clang-format.language.c.style": "Microsoft",
   "clang-format.language.cpp.style": "Microsoft",
+  "languageToolLinter.languageTool.ignoredWordsInWorkspace": [
+    "covesa"
+  ],
 }

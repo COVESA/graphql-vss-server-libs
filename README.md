@@ -6,6 +6,31 @@ Main libraries of the VSS GraphQL C++ Server.
 
 This repository contains libraries to implement a GraphQL Server along with [Microsoft's GraphQL service libraries](https://github.com/microsoft/cppgraphqlgen).
 
+## Table of Contents
+
+* [GraphQL VSS Server Libraries](#graphql-vss-server-libraries)
+   * [Introduction](#introduction)
+      * [The Protocol Library](#the-protocol-library)
+         * [Connection handling](#connection-handling)
+         * [Authorization process](#authorization-process)
+         * [Request handling](#request-handling)
+      * [The Support Library](#the-support-library)
+         * [Singletons](#singletons)
+         * [CommonAPI Singletons](#commonapi-singletons)
+         * [Debug Messages](#debug-messages)
+         * [DLT logs](#dlt-logs)
+         * [Range Validation](#range-validation)
+         * [Permissions](#permissions)
+         * [Spinlock](#spinlock)
+         * [Demangle](#demangle)
+         * [Type Traits Extras](#type-traits-extras)
+   * [Dependencies](#dependencies)
+   * [Build and install](#build-and-install)
+      * [CommonAPI Version](#commonapi-version)
+      * [Debug builds](#debug-builds)
+      * [Build command](#build-command)
+   * [Usage](#usage)
+
 ### The Protocol Library
 
 This library supports the creation and management of requests. It handles the HTTP and WebSocket connections, validations, and starts the data resolution process. The flow from starting the server until resolving a query, is:
@@ -138,7 +163,7 @@ and always pass the following parameters to CMake:
 
 This is, of course, optional, but will allow you to use different versions of the dependencies and avoids messing up your system.
 
-### The dependencies and range of versions compatible are given below.
+### The dependencies and range of compatible versions are given below.
 
 * clang => 9.0
 * CMake => 3.13
@@ -182,4 +207,13 @@ Later, when compiling the server with CMake, do not forget to pass the same valu
 
 ## Usage
 
-TODO: Supply the implementation example.
+We supply an example implementation of these libraries at COVESA's repository [GraphQL VSS Data Server](https://github.com/COVESA/graphql-vss-data-server). To run this example, you must also have the [Test SOME/IP Service](https://github.com/COVESA/test-someip-service), from where the server will get mocked data.
+
+As the example shows, the developer creating a C++ GraphQL Server with these libraries must provide:
+
+* **The resolver functions and the schema types in C++**, which can be easily generated with the *schemagen* provided by [cppgraphqlgen](https://github.com/microsoft/cppgraphqlgen) and GraphQL Schema to C++ Code Generator (yet to be supplied
+TODO: put the link to it here when ready on upstream). The GraphQL VSS Data Server provides these files already generated;
+* **The implementation library**, with the declaration of the proxies and attributes (using the macros provided at [commonapi-singletons.hpp](graphql_vss_server_libs/support/commonapi-singletons.hpp)), and also supplying any code that could not be generated, for example, functions that post-process the data obtained from SOME/IP;
+* **The main function** that creates and sets the server instance (instance of `GraphQLServer` class) itself and register the DLT loggers. See the [cpp-server/src/server.cpp](https://github.com/COVESA/graphql-vss-data-server/blob/master/cpp-server/src/server.cpp) file.
+
+More examples and explanations are provided at the README.md of *GraphQL VSS Data Server*.
