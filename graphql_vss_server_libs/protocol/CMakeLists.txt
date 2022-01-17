@@ -59,8 +59,8 @@ target_include_directories(
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+  $<BUILD_INTERFACE:${WEBSOCKETPP_INCLUDE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-  ${WEBSOCKETPP_INCLUDE_DIR}
 )
 target_compile_definitions(
   graphql_vss_server_libs-protocol

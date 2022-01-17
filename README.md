@@ -198,7 +198,7 @@ cd graphql-vss-server-libs mkdir build && cd build
 cmake -G Ninja -DCMAKE_PREFIX_PATH="$MY_PREFIX" -DCMAKE_INSTALL_PREFIX="$MY_PREFIX" \
   -DCMAKE_CXX_COMPILER=$(which clang++) \
   -DCMAKE_STATIC_LINKER_FLAGS="" \
-  -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld -L/usr/local/lib -L$HOME/usr/lib" \
+  -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld -L/usr/local/lib -L$MY_PREFIX/lib" \
   -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld -L/usr/local/lib" \
   -DPKG_CONFIG_USE_CMAKE_PREFIX_PATH=ON -S .. -B .
 ```
